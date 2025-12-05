@@ -289,6 +289,375 @@ export const openApiSpec = {
         }
       }
     },
+    '/api/checkin/history': {
+      get: {
+        tags: ['签到'],
+        summary: '获取签到历史',
+        description: '获取用户的签到历史记录',
+        security: [{ bearerAuth: [] }],
+        responses: {
+          '200': {
+            description: '获取成功',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    history: {
+                      type: 'array',
+                      items: {
+                        type: 'object',
+                        properties: {
+                          id: { type: 'integer', example: 1 },
+                          checkinDate: { type: 'string', format: 'date', example: '2023-12-01' },
+                          pointsEarned: { type: 'integer', example: 10 },
+                          createdAt: { type: 'string', format: 'date-time', example: '2023-12-01T08:00:00.000Z' }
+                        }
+                      }
+                    },
+                    totalCount: { type: 'integer', example: 30 }
+                  }
+                }
+              }
+            }
+          },
+          '401': {
+            description: '未认证或令牌无效',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    error: { type: 'string', example: '未认证' }
+                  }
+                }
+              }
+            }
+          },
+          '500': {
+            description: '服务器错误',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    error: { type: 'string', example: '获取签到历史失败' }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    '/api/checkin/status': {
+      get: {
+        tags: ['签到'],
+        summary: '获取今日签到状态',
+        description: '获取用户今日是否已签到',
+        security: [{ bearerAuth: [] }],
+        responses: {
+          '200': {
+            description: '获取成功',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    checkedIn: { type: 'boolean', example: false, description: '今日是否已签到' },
+                    checkinDate: { type: 'string', format: 'date', example: '2023-12-01', description: '签到日期' }
+                  }
+                }
+              }
+            }
+          },
+          '401': {
+            description: '未认证或令牌无效',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    error: { type: 'string', example: '未认证' }
+                  }
+                }
+              }
+            }
+          },
+          '500': {
+            description: '服务器错误',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    error: { type: 'string', example: '获取签到状态失败' }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    '/api/membership/redeem-history': {
+      get: {
+        tags: ['会员'],
+        summary: '获取会员兑换历史',
+        description: '获取用户的会员兑换历史记录',
+        security: [{ bearerAuth: [] }],
+        responses: {
+          '200': {
+            description: '获取成功',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    currentMember: {
+                      type: 'object',
+                      properties: {
+                        isMember: { type: 'boolean', example: true },
+                        expireAt: { type: 'string', format: 'date-time', example: '2023-12-31T23:59:59.999Z', nullable: true },
+                        points: { type: 'number', example: 150 }
+                      }
+                    },
+                    history: {
+                      type: 'array',
+                      items: { type: 'object' }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          '401': {
+            description: '未认证或令牌无效',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    error: { type: 'string', example: '未认证' }
+                  }
+                }
+              }
+            }
+          },
+          '500': {
+            description: '服务器错误',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    error: { type: 'string', example: '获取会员历史失败' }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    '/api/stats/user': {
+      get: {
+        tags: ['统计'],
+        summary: '获取用户统计',
+        description: '获取用户的详细统计信息，包括签到、会员等数据',
+        security: [{ bearerAuth: [] }],
+        responses: {
+          '200': {
+            description: '获取成功',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    user: {
+                      type: 'object',
+                      properties: {
+                        id: { type: 'integer', example: 1 },
+                        email: { type: 'string', example: 'user@example.com' },
+                        nickname: { type: 'string', example: '用户昵称' },
+                        avatar: { type: 'string', example: 'https://example.com/avatar.jpg' },
+                        points: { type: 'integer', example: 150 },
+                        isMember: { type: 'boolean', example: true },
+                        memberExpireAt: { type: 'string', format: 'date-time', example: '2023-12-31T23:59:59.999Z', nullable: true },
+                        createdAt: { type: 'string', format: 'date-time', example: '2023-01-01T00:00:00.000Z' }
+                      }
+                    },
+                    checkin: {
+                      type: 'object',
+                      properties: {
+                        totalCheckins: { type: 'integer', example: 30 },
+                        totalPointsEarned: { type: 'integer', example: 300 },
+                        lastCheckinDate: { type: 'string', format: 'date', example: '2023-12-01', nullable: true }
+                      }
+                    },
+                    membership: {
+                      type: 'object',
+                      properties: {
+                        status: { type: 'string', example: 'active', enum: ['active', 'inactive'] },
+                        expireAt: { type: 'string', format: 'date-time', example: '2023-12-31T23:59:59.999Z', nullable: true }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          '401': {
+            description: '未认证或令牌无效',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    error: { type: 'string', example: '未认证' }
+                  }
+                }
+              }
+            }
+          },
+          '404': {
+            description: '用户不存在',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    error: { type: 'string', example: '用户不存在' }
+                  }
+                }
+              }
+            }
+          },
+          '500': {
+            description: '服务器错误',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    error: { type: 'string', example: '获取用户统计失败' }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    '/api/stats/leaderboard': {
+      get: {
+        tags: ['统计'],
+        summary: '获取积分排行榜',
+        description: '获取用户积分排行榜',
+        parameters: [
+          {
+            name: 'limit',
+            in: 'query',
+            description: '返回条数限制，最多100条',
+            required: false,
+            schema: { type: 'integer', minimum: 1, maximum: 100, default: 10 }
+          }
+        ],
+        responses: {
+          '200': {
+            description: '获取成功',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    leaderboard: {
+                      type: 'array',
+                      items: {
+                        type: 'object',
+                        properties: {
+                          rank: { type: 'integer', example: 1 },
+                          userId: { type: 'integer', example: 1 },
+                          nickname: { type: 'string', example: '用户昵称' },
+                          avatar: { type: 'string', example: 'https://example.com/avatar.jpg' },
+                          points: { type: 'integer', example: 1000 },
+                          isMember: { type: 'boolean', example: true }
+                        }
+                      }
+                    },
+                    totalCount: { type: 'integer', example: 100 }
+                  }
+                }
+              }
+            }
+          },
+          '500': {
+            description: '服务器错误',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    error: { type: 'string', example: '获取排行榜失败' }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    '/api/stats/system': {
+      get: {
+        tags: ['统计'],
+        summary: '获取系统统计',
+        description: '获取系统总体统计信息（管理员功能）',
+        responses: {
+          '200': {
+            description: '获取成功',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    users: {
+                      type: 'object',
+                      properties: {
+                        totalUsers: { type: 'integer', example: 1000 },
+                        totalMembers: { type: 'integer', example: 100 },
+                        totalPoints: { type: 'integer', example: 50000 },
+                        avgPoints: { type: 'integer', example: 50 }
+                      }
+                    },
+                    checkins: {
+                      type: 'object',
+                      properties: {
+                        totalCheckins: { type: 'integer', example: 5000 },
+                        todayCheckins: { type: 'integer', example: 100 },
+                        totalPointsEarned: { type: 'integer', example: 50000 }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          '500': {
+            description: '服务器错误',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    error: { type: 'string', example: '获取系统统计失败' }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     '/api/membership/status': {
       get: {
         tags: ['会员'],
@@ -356,6 +725,10 @@ export const openApiSpec = {
     {
       name: '会员',
       description: '会员相关接口'
+    },
+    {
+      name: '统计',
+      description: '统计相关接口'
     }
   ],
   // 安全认证方案

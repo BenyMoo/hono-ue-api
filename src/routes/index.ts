@@ -5,6 +5,7 @@ import type { HonoEnv } from '../types';
 import auth from './auth';
 import checkin from './checkin';
 import membership from './membership';
+import stats from './stats';
 
 // Create main router
 const router = new Hono<HonoEnv>();
@@ -13,5 +14,6 @@ const router = new Hono<HonoEnv>();
 router.route('/auth', auth);
 router.route('/checkin', checkin);
 router.route('/membership', membership);
+router.route('/stats', stats);
 
 export default router;
