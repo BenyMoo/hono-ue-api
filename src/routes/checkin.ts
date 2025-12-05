@@ -9,6 +9,7 @@ import {
     cacheUserInfo,
     invalidateUserCache
 } from '../utils/redis-cache';
+import { getBeijingToday, getBeijingDateOnly } from '../utils/datetime';
 
 const checkin = new Hono<HonoEnv>();
 
@@ -18,11 +19,11 @@ checkin.post('/', async (c) => {
     const user = c.get('user');
     const userId = user.sub;
     const db = c.get('db');
-    const todayStr = new Date().toISOString().split('T')[0];
-    const todayDate = new Date(todayStr);
+    const todayStr = getBeijingToday(); // 使用北京时区的今日日期
+    const todayDate = getBeijingDateOnly(todayStr); // 使用北京时区的日期对象
     const pointsReward = 10; // 每日签到积分
 
-    console.log(`📝 [API] 签到请求 | User: ${userId} | Date: ${todayStr}`);
+    console.log(`📝 [API] 签到请求 | User: ${userId} | 北京时间日期: ${todayStr}`);
 
     // 首先检查Redis缓存
     const cachedStatus = await getCachedCheckinStatus(userId, todayStr);
@@ -139,9 +140,9 @@ checkin.get('/history', async (c) => {
 checkin.get('/status', async (c) => {
     const user = c.get('user');
     const userId = user.sub;
-    const todayStr = new Date().toISOString().split('T')[0];
+    const todayStr = getBeijingToday(); // 使用北京时区的今日日期
 
-    console.log(`📝 [API] 获取签到状态 | User: ${userId} | Date: ${todayStr}`);
+    console.log(`📝 [API] 获取签到状态 | User: ${userId} | 北京时间日期: ${todayStr}`);
 
     try {
         // 检查Redis缓存
@@ -157,7 +158,7 @@ checkin.get('/status', async (c) => {
 
         // 查询数据库
         const db = c.get('db');
-        const todayDate = new Date(todayStr);
+        const todayDate = getBeijingDateOnly(todayStr);
         const existingCheckin = await db.select()
             .from(checkins)
             .where(and(

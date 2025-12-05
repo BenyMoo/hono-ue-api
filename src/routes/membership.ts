@@ -8,6 +8,7 @@ import {
     getCachedMembershipStatus,
     invalidateUserCache
 } from '../utils/redis-cache';
+import { getBeijingTime, addDaysToBeijingDate } from '../utils/datetime';
 
 const membership = new Hono<HonoEnv>();
 
@@ -35,17 +36,16 @@ membership.post('/redeem', async (c) => {
         return c.json({ error: `积分不足，需要 ${MEMBERSHIP_COST} 积分` }, 400);
     }
 
-    const now = new Date();
-    let newExpireAt = new Date();
+    const now = getBeijingTime(); // 使用北京时间
+    let newExpireAt = getBeijingTime();
 
     if (currentUser.is_member && currentUser.member_expire_at && currentUser.member_expire_at > now) {
         // 延长现有会员
-        newExpireAt = new Date(currentUser.member_expire_at);
-        newExpireAt.setDate(newExpireAt.getDate() + MEMBERSHIP_DURATION_DAYS);
+        newExpireAt = addDaysToBeijingDate(new Date(currentUser.member_expire_at), MEMBERSHIP_DURATION_DAYS);
         console.log(`📅 [INFO] 延长会员 | User: ${userId} | New Expire: ${newExpireAt.toISOString()}`);
     } else {
         // 新会员
-        newExpireAt.setDate(now.getDate() + MEMBERSHIP_DURATION_DAYS);
+        newExpireAt = addDaysToBeijingDate(now, MEMBERSHIP_DURATION_DAYS);
         console.log(`🆕 [INFO] 新会员 | User: ${userId} | Expire: ${newExpireAt.toISOString()}`);
     }
 
@@ -97,7 +97,8 @@ membership.get('/status', async (c) => {
     }
     const currentUser = user[0];
 
-    const isExpired = currentUser.member_expire_at ? new Date(currentUser.member_expire_at) < new Date() : true;
+    const now = getBeijingTime(); // 使用北京时间
+    const isExpired = currentUser.member_expire_at ? new Date(currentUser.member_expire_at) < now : true;
     const isMember = currentUser.is_member && !isExpired;
 
     const membershipStatus = {
@@ -121,9 +122,9 @@ membership.get('/redeem-history', async (c) => {
     const db = c.get('db');
     const redis = c.get('redis');
 
-    try {
-        console.log(`📝 [API] 获取会员兑换历史 | User: ${userId}`);
+    console.log(`📝 [API] 获取会员兑换历史 | User: ${userId}`);
 
+    try {
         // 检查缓存
         const cacheKey = `membership:history:${userId}`;
         if (redis) {
@@ -144,7 +145,8 @@ membership.get('/redeem-history', async (c) => {
         }
 
         const currentUser = user[0];
-        const isExpired = currentUser.member_expire_at ? new Date(currentUser.member_expire_at) < new Date() : true;
+        const now = getBeijingTime(); // 使用北京时间
+        const isExpired = currentUser.member_expire_at ? new Date(currentUser.member_expire_at) < now : true;
         const isMember = currentUser.is_member && !isExpired;
 
         const result = {
