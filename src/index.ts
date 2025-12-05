@@ -1,55 +1,68 @@
-import { OpenAPIHono } from '@hono/zod-openapi';
-import { apiReference } from '@scalar/hono-api-reference';
-import auth from './routes/auth';
-import checkin from './routes/checkin';
-import membership from './routes/membership';
-import { HonoEnv } from './types';
+import { Hono } from 'hono';
+import { logger } from 'hono/logger';
+import { cors } from 'hono/cors';
+import { etag } from 'hono/etag';
+import { swaggerUI } from '@hono/swagger-ui';
 import { createDb } from './db';
+import type { HonoEnv } from './types';
+import { openApiSpec } from './openapi';
 
-const app = new OpenAPIHono<HonoEnv>();
+// Import routes
+import routes from './routes';
 
-app.use(async (c, next) => {
+// Create Hono app with proper typing
+const app = new Hono<HonoEnv>();
+
+// Global middleware
+app.use('*', logger());
+app.use('*', cors());
+app.use('*', etag());
+
+// Database middleware
+app.use('*', async (c, next) => {
   if (!c.env.DATABASE_URL) {
     console.error('DATABASE_URL is not defined in environment variables');
-    return c.json({ error: '数据库配置错误 (Database configuration error)' }, 500);
+    return c.json({ error: '数据库配置错误' }, 500);
   }
   
   try {
     const db = createDb(c.env.DATABASE_URL);
-    console.log('DB URL:', c.env.DATABASE_URL?.replace(/:[^:@]+@/, ':***@')); // Log masked URL
     c.set('db', db);
     await next();
   } catch (error) {
     console.error('Database connection error:', error);
-    return c.json({ error: '数据库连接失败 (Database connection failed)' }, 500);
+    return c.json({ error: '数据库连接失败' }, 500);
   }
 });
 
+// Health check endpoint
 app.get('/', (c) => {
-  return c.text('连接正常');
+  return c.json({ 
+    message: '连接正常',
+    timestamp: new Date().toISOString()
+  });
 });
 
-// Mount routes
-app.route('/auth', auth);
-app.route('/checkin', checkin as any);
-app.route('/membership', membership as any);
+// API routes
+app.route('/api', routes);
 
-// OpenAPI Docs
-app.doc('/doc', {
-  openapi: '3.0.0',
-  info: {
-    version: '1.0.0',
-    title: 'Hono UE API',
-  },
+// API Documentation
+app.get('/ui', swaggerUI({ url: '/doc' }));
+
+// OpenAPI JSON endpoint
+app.get('/doc', (c) => {
+  return c.json(openApiSpec);
 });
 
-app.get(
-  '/ui',
-  apiReference({
-    spec: {
-      url: '/doc',
-    },
-  } as any)
-);
+// 404 handler
+app.notFound((c) => {
+  return c.json({ error: 'Not Found' }, 404);
+});
+
+// Error handler
+app.onError((err, c) => {
+  console.error(`${err}`);
+  return c.json({ error: 'Internal Server Error' }, 500);
+});
 
 export default app;
