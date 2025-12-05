@@ -38,7 +38,7 @@ app.get(
     spec: {
       url: '/doc',
     },
-  }) as any
+  } as any)
 );
 
 export default app;
