@@ -29,9 +29,9 @@ membership.post('/redeem', async (c) => {
     const now = new Date();
     let newExpireAt = new Date();
 
-    if (currentUser.isMember && currentUser.memberExpireAt && currentUser.memberExpireAt > now) {
+    if (currentUser.is_member && currentUser.member_expire_at && currentUser.member_expire_at > now) {
         // Extend existing membership
-        newExpireAt = new Date(currentUser.memberExpireAt);
+        newExpireAt = new Date(currentUser.member_expire_at);
         newExpireAt.setDate(newExpireAt.getDate() + MEMBERSHIP_DURATION_DAYS);
     } else {
         // New membership
@@ -43,8 +43,8 @@ membership.post('/redeem', async (c) => {
             await tx.update(users)
                 .set({
                     points: sql`${users.points} - ${MEMBERSHIP_COST}`,
-                    isMember: true,
-                    memberExpireAt: newExpireAt,
+                    is_member: true,
+                    member_expire_at: newExpireAt,
                 })
                 .where(eq(users.id, userId));
         });
@@ -71,13 +71,13 @@ membership.get('/status', async (c) => {
     }
     const currentUser = user[0];
 
-    const isExpired = currentUser.memberExpireAt ? new Date(currentUser.memberExpireAt) < new Date() : true;
-    const isMember = currentUser.isMember && !isExpired;
+    const isExpired = currentUser.member_expire_at ? new Date(currentUser.member_expire_at) < new Date() : true;
+    const isMember = currentUser.is_member && !isExpired;
 
     return c.json({
         isMember,
         points: currentUser.points,
-        expireAt: currentUser.memberExpireAt,
+        expireAt: currentUser.member_expire_at,
         nickname: currentUser.nickname,
         avatar: currentUser.avatar
     });

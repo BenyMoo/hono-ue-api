@@ -5,14 +5,14 @@ export const users = mysqlTable('users', {
   id: bigint('id', { mode: 'number' }).primaryKey().autoincrement(),
   email: varchar('email', { length: 255 }).notNull().unique(),
   phone: varchar('phone', { length: 20 }),
-  passwordHash: varchar('password_hash', { length: 255 }).notNull(),
+  password_hash: varchar('password_hash', { length: 255 }).notNull(),
   nickname: varchar('nickname', { length: 100 }),
   avatar: varchar('avatar', { length: 255 }),
   points: int('points').default(0).notNull(),
-  isMember: boolean('is_member').default(false).notNull(),
-  memberExpireAt: timestamp('member_expire_at'),
-  createdAt: timestamp('created_at').default(sql`CURRENT_TIMESTAMP`).notNull(),
-  updatedAt: timestamp('updated_at').default(sql`CURRENT_TIMESTAMP`).onUpdateNow().notNull(),
+  is_member: boolean('is_member').default(false).notNull(),
+  member_expire_at: timestamp('member_expire_at'),
+  created_at: timestamp('created_at').default(sql`CURRENT_TIMESTAMP`).notNull(),
+  updated_at: timestamp('updated_at').default(sql`CURRENT_TIMESTAMP`).onUpdateNow().notNull(),
 });
 
 export const checkins = mysqlTable('checkins', {

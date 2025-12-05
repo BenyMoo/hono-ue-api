@@ -133,7 +133,7 @@ auth.openapi(registerRoute, async (c) => {
 
         await db.insert(users).values({
             email,
-            passwordHash: hashedPassword,
+            password_hash: hashedPassword,
             nickname: nickname || email.split('@')[0],
         });
         return c.json({ message: '注册成功 (Registration successful)' }, 201);
@@ -153,7 +153,7 @@ auth.openapi(loginRoute, async (c) => {
             return c.json({ error: '用户不存在或密码错误 (Invalid credentials)' }, 401);
         }
 
-        const isValid = await verifyPassword(password, user[0].passwordHash);
+        const isValid = await verifyPassword(password, user[0].password_hash);
         if (!isValid) {
             return c.json({ error: '用户不存在或密码错误 (Invalid credentials)' }, 401);
         }
