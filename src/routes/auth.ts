@@ -137,9 +137,9 @@ auth.openapi(registerRoute, async (c) => {
             nickname: nickname || email.split('@')[0],
         });
         return c.json({ message: '注册成功 (Registration successful)' }, 201);
-    } catch (e) {
-        console.error('Registration error:', e);
-        return c.json({ error: '注册失败 (Registration failed)' }, 500);
+    } catch (e: any) {
+        console.error('Registration error details:', JSON.stringify(e, null, 2));
+        return c.json({ error: `注册失败: ${e.message} (Cause: ${e.cause ? JSON.stringify(e.cause) : 'Unknown'})` }, 500);
     }
 });
 
@@ -167,9 +167,9 @@ auth.openapi(loginRoute, async (c) => {
         const token = await sign(payload, c.env.JWT_SECRET || 'supersecretkey');
 
         return c.json({ token, user: { id: user[0].id, email: user[0].email, nickname: user[0].nickname } }, 200);
-    } catch (e) {
-        console.error('Login error:', e);
-        return c.json({ error: '登录失败 (Login failed)' }, 500);
+    } catch (e: any) {
+        console.error('Login error details:', JSON.stringify(e, null, 2));
+        return c.json({ error: `登录失败: ${e.message} (Cause: ${e.cause ? JSON.stringify(e.cause) : 'Unknown'})` }, 500);
     }
 });
 

@@ -1,7 +1,7 @@
 {
   "version": "5",
   "dialect": "mysql",
-  "id": "eaf930c2-27aa-4d25-bb88-464d877a0fe6",
+  "id": "a70349de-eaa6-4c12-b4c2-51db7a7f103a",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "checkins": {

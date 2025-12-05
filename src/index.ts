@@ -10,12 +10,13 @@ const app = new OpenAPIHono<HonoEnv>();
 
 app.use(async (c, next) => {
   const db = createDb(c.env.DATABASE_URL);
+  console.log('DB URL:', c.env.DATABASE_URL?.replace(/:[^:@]+@/, ':***@')); // Log masked URL
   c.set('db', db);
   await next();
 });
 
 app.get('/', (c) => {
-  return c.text('Hello Hono!');
+  return c.text('连接正常');
 });
 
 // Mount routes
