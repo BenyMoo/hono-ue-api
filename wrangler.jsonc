@@ -5,6 +5,8 @@
   "compatibility_date": "2025-12-05",
   "vars": {
     "JWT_SECRET": "supersecretkey",
-    "DATABASE_URL": "mysql://3z6MDDiXFKzMTYR.root:EWw6F9Jz8EzDKN93@gateway01.ap-southeast-1.prod.alicloud.tidbcloud.com:4000/test?ssl={\"rejectUnauthorized\":true}"
+    "DATABASE_URL": "mysql://3z6MDDiXFKzMTYR.root:EWw6F9Jz8EzDKN93@gateway01.ap-southeast-1.prod.alicloud.tidbcloud.com:4000/test?ssl={\"rejectUnauthorized\":true}",
+    "REDIS_URL": "https://hardy-swift-10283.upstash.io",
+    "REDIS_TOKEN": "ASgrAAIncDJmOTBiYzIwZDhmMTc0MDFiYjAzNzY1MGQ3ZjQ1MTgzN3AyMTAyODM"
   }
 }

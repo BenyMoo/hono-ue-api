@@ -4,38 +4,50 @@ import { cors } from 'hono/cors';
 import { etag } from 'hono/etag';
 import { swaggerUI } from '@hono/swagger-ui';
 import { createDb } from './db';
-import type { HonoEnv } from './types';
+import { getRedis } from './utils/redis';
+import { getConfig } from './config/index';
+import type { HonoEnv } from './types/index';
 import { openApiSpec } from './openapi';
 
 // Import routes
 import routes from './routes';
 
-// Create Hono app with proper typing
+// 创建 Hono 应用并设置正确的类型
 const app = new Hono<HonoEnv>();
 
-// Global middleware
-app.use('*', logger());
-app.use('*', cors());
-app.use('*', etag());
+// 全局中间件
+app.use('*', logger());     // 日志中间件
+app.use('*', cors());      // CORS 中间件
+app.use('*', etag());      // ETag 中间件
 
-// Database middleware
+// 数据库和 Redis 中间件
 app.use('*', async (c, next) => {
-  if (!c.env.DATABASE_URL) {
-    console.error('DATABASE_URL is not defined in environment variables');
-    return c.json({ error: '数据库配置错误' }, 500);
-  }
-  
   try {
-    const db = createDb(c.env.DATABASE_URL);
+    // 从 Hono 上下文获取配置（wrangler.jsonc 中的变量）
+    const config = getConfig(c);
+    
+    // 初始化数据库
+    const db = createDb(config.database.url);
     c.set('db', db);
+    
+    // 初始化 Redis - 优雅处理连接错误
+    try {
+      const redis = getRedis(config.redis.url, config.redis.token);
+      c.set('redis', redis);
+    } catch (redisError) {
+      console.warn('Redis 初始化警告:', redisError);
+      // 继续运行，不依赖 Redis - 基础功能可选
+      c.set('redis', null);
+    }
+    
     await next();
   } catch (error) {
-    console.error('Database connection error:', error);
-    return c.json({ error: '数据库连接失败' }, 500);
+    console.error('配置错误:', error);
+    return c.json({ error: '系统配置错误' }, 500);
   }
 });
 
-// Health check endpoint
+// 健康检查端点
 app.get('/', (c) => {
   return c.json({ 
     message: '连接正常',
@@ -43,23 +55,23 @@ app.get('/', (c) => {
   });
 });
 
-// API routes
+// API 路由
 app.route('/api', routes);
 
-// API Documentation
+// API 文档界面
 app.get('/ui', swaggerUI({ url: '/doc' }));
 
-// OpenAPI JSON endpoint
+// OpenAPI JSON 端点
 app.get('/doc', (c) => {
   return c.json(openApiSpec);
 });
 
-// 404 handler
+// 404 处理
 app.notFound((c) => {
   return c.json({ error: 'Not Found' }, 404);
 });
 
-// Error handler
+// 错误处理
 app.onError((err, c) => {
   console.error(`${err}`);
   return c.json({ error: 'Internal Server Error' }, 500);

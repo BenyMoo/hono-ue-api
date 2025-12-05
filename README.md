@@ -86,3 +86,37 @@ CREATE TABLE `users` (
 启动服务后，访问 `/ui` 查看交互式 API 文档 (Scalar UI)。
 例如: `http://localhost:8787/ui`
 
+
+
+# 源代码目录结构
+
+这个目录包含了应用程序的所有源代码，按功能模块组织：
+
+## 目录结构
+
+### `/config/` - 配置管理
+- `index.ts` - 应用程序配置管理，从环境变量获取配置信息
+
+### `/db/` - 数据库相关
+- `index.ts` - 数据库连接和初始化
+- `schema.ts` - 数据库表结构定义
+
+### `/middlewares/` - 中间件
+- `auth.ts` - 身份验证中间件
+
+### `/routes/` - API 路由
+- `index.ts` - 路由汇总和导出
+- `auth.ts` - 认证相关路由（注册、登录）
+- `checkin.ts` - 签到功能路由
+- `membership.ts` - 会员功能路由
+
+### `/types/` - 类型定义
+- `index.ts` - 应用程序使用的 TypeScript 类型定义
+
+### `/utils/` - 工具函数
+- `redis.ts` - Redis 连接和操作工具
+- `password.ts` - 密码加密和验证工具
+
+### 根目录文件
+- `index.ts` - 应用程序主入口文件，设置中间件和路由
+- `openapi.ts` - OpenAPI/Swagger 文档配置

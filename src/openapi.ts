@@ -12,6 +12,7 @@ export const openApiSpec = {
       description: '本地开发服务器'
     }
   ],
+  // API 路径定义
   paths: {
     '/api/auth/register': {
       post: {
@@ -342,6 +343,7 @@ export const openApiSpec = {
       }
     }
   },
+  // API 标签分组
   tags: [
     {
       name: '认证',
@@ -356,6 +358,7 @@ export const openApiSpec = {
       description: '会员相关接口'
     }
   ],
+  // 安全认证方案
   components: {
     securitySchemes: {
       bearerAuth: {
