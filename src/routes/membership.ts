@@ -3,10 +3,10 @@ import { eq, sql } from 'drizzle-orm';
 import { users } from '../db/schema';
 import { authMiddleware } from '../middlewares/auth';
 import { HonoEnv } from '../types';
-import { 
-  cacheMembershipStatus, 
-  getCachedMembershipStatus, 
-  invalidateUserCache 
+import {
+    cacheMembershipStatus,
+    getCachedMembershipStatus,
+    invalidateUserCache
 } from '../utils/redis-cache';
 
 const membership = new Hono<HonoEnv>();
@@ -21,13 +21,17 @@ membership.post('/redeem', async (c) => {
     const userId = userPayload.sub;
     const db = c.get('db');
 
+    console.log(`📝 [API] 会员兑换请求 | User: ${userId}`);
+
     const user = await db.select().from(users).where(eq(users.id, userId)).limit(1);
     if (user.length === 0) {
+        console.log(`⚠ [WARN] 用户不存在 | User: ${userId}`);
         return c.json({ error: '用户不存在' }, 404);
     }
     const currentUser = user[0];
 
     if (currentUser.points < MEMBERSHIP_COST) {
+        console.log(`⚠ [WARN] 积分不足 | User: ${userId} | Points: ${currentUser.points} | Required: ${MEMBERSHIP_COST}`);
         return c.json({ error: `积分不足，需要 ${MEMBERSHIP_COST} 积分` }, 400);
     }
 
@@ -38,9 +42,11 @@ membership.post('/redeem', async (c) => {
         // 延长现有会员
         newExpireAt = new Date(currentUser.member_expire_at);
         newExpireAt.setDate(newExpireAt.getDate() + MEMBERSHIP_DURATION_DAYS);
+        console.log(`📅 [INFO] 延长会员 | User: ${userId} | New Expire: ${newExpireAt.toISOString()}`);
     } else {
         // 新会员
         newExpireAt.setDate(now.getDate() + MEMBERSHIP_DURATION_DAYS);
+        console.log(`🆕 [INFO] 新会员 | User: ${userId} | Expire: ${newExpireAt.toISOString()}`);
     }
 
     try {
@@ -57,6 +63,7 @@ membership.post('/redeem', async (c) => {
         // 清除会员缓存
         await invalidateUserCache(userId);
 
+        console.log(`✅ [SUCCESS] 会员兑换成功 | User: ${userId} | Points: ${currentUser.points - MEMBERSHIP_COST}`);
         return c.json({
             message: '会员兑换成功',
             expireAt: newExpireAt.toISOString(),
@@ -64,7 +71,7 @@ membership.post('/redeem', async (c) => {
             durationDays: MEMBERSHIP_DURATION_DAYS
         });
     } catch (e) {
-        console.error('会员兑换错误:', e);
+        console.error('❌ [ERROR] 会员兑换错误:', e);
         return c.json({ error: '兑换失败' }, 500);
     }
 });
@@ -74,11 +81,15 @@ membership.get('/status', async (c) => {
     const userId = userPayload.sub;
     const db = c.get('db');
 
+    console.log(`📝 [API] 获取会员状态 | User: ${userId}`);
+
     // 首先检查Redis缓存
     const cachedStatus = await getCachedMembershipStatus(userId);
     if (cachedStatus) {
         return c.json(cachedStatus);
     }
+
+    console.log(`✗ [CACHE MISS] 会员状态缓存未命中，查询数据库 | User: ${userId}`);
 
     const user = await db.select().from(users).where(eq(users.id, userId)).limit(1);
     if (user.length === 0) {
@@ -108,8 +119,23 @@ membership.get('/redeem-history', async (c) => {
     const userPayload = c.get('user');
     const userId = userPayload.sub;
     const db = c.get('db');
+    const redis = c.get('redis');
 
     try {
+        console.log(`📝 [API] 获取会员兑换历史 | User: ${userId}`);
+
+        // 检查缓存
+        const cacheKey = `membership:history:${userId}`;
+        if (redis) {
+            const cached = await redis.get(cacheKey);
+            if (cached) {
+                console.log(`✓ [CACHE HIT] 会员历史来自缓存 | User: ${userId}`);
+                return c.json(typeof cached === 'string' ? JSON.parse(cached) : cached);
+            }
+        }
+
+        console.log(`✗ [CACHE MISS] 会员历史缓存未命中，查询数据库 | User: ${userId}`);
+
         // 这里可以查询 membership_redeem_log 表
         // 目前返回用户的基本会员信息
         const user = await db.select().from(users).where(eq(users.id, userId)).limit(1);
@@ -121,16 +147,24 @@ membership.get('/redeem-history', async (c) => {
         const isExpired = currentUser.member_expire_at ? new Date(currentUser.member_expire_at) < new Date() : true;
         const isMember = currentUser.is_member && !isExpired;
 
-        return c.json({
+        const result = {
             currentMember: {
                 isMember,
                 expireAt: currentUser.member_expire_at,
                 points: currentUser.points
             },
             history: [] // 可以扩展查询历史记录
-        });
+        };
+
+        // 缓存结果（5分钟）
+        if (redis) {
+            await redis.setex(cacheKey, 300, JSON.stringify(result));
+            console.log(`💾 [CACHE SET] 会员历史已缓存 | User: ${userId}`);
+        }
+
+        return c.json(result);
     } catch (e) {
-        console.error('获取会员历史错误:', e);
+        console.error('❌ [ERROR] 获取会员历史错误:', e);
         return c.json({ error: '获取会员历史失败' }, 500);
     }
 });
